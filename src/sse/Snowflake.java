@@ -5,6 +5,15 @@ import java.awt.geom.Point2D;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 
+/**
+ * Snowflake Simulation Environment (SSE)
+ * November 2017
+ * 
+ * @author Pascal Gadient (gadient@inf.unibe.ch) 
+ * 
+ * SCG University of Bern, Concurrency Course
+ * 
+ */
 public class Snowflake implements Runnable {
 
 	private int levelOfDetail;

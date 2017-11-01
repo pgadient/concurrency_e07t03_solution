@@ -10,6 +10,15 @@ import java.util.concurrent.Semaphore;
 
 import javax.swing.JFrame;
 
+/**
+ * Snowflake Simulation Environment (SSE)
+ * November 2017
+ * 
+ * @author Pascal Gadient (gadient@inf.unibe.ch) 
+ * 
+ * SCG University of Bern, Concurrency Course
+ * 
+ */
 public class SnowflakeRenderer {
 
 	private JFrame frame;
