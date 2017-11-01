@@ -9,6 +9,8 @@ import java.util.concurrent.Semaphore;
  * Snowflake Simulation Environment (SSE)
  * November 2017
  * 
+ * Solution
+ * 
  * @author Pascal Gadient (gadient@inf.unibe.ch) 
  * 
  * SCG University of Bern, Concurrency Course
@@ -24,12 +26,13 @@ public class Snowflake implements Runnable {
 	private Graphics2D g;
 	private int outOfViewLimit;
 	private Semaphore semaphore;
+	private Semaphore semaphoreThreadsFinished;
 	private float horizontalMovementAmplifier;
-	
-	public Snowflake(int levelOfDetail, int snowflakeSize, int xPos, float gravity, Graphics2D g, int frameHeight, Semaphore s) {
+		
+	public Snowflake(int levelOfDetail, int snowflakeSize, int xPos, float gravity, Graphics2D g, int frameHeight, Semaphore s, Semaphore s2) {
 		Random r = new Random(System.nanoTime());
 		r.nextFloat(); // better results (shouldn't be)
-		this.levelOfDetail = levelOfDetail;
+		this.levelOfDetail = (int) (levelOfDetail * r.nextFloat()) + 2;
 		this.snowflakeSize = (int) (snowflakeSize * r.nextFloat() + 20);
 		this.xPos = xPos;
 		this.yPos = 0;
@@ -37,11 +40,12 @@ public class Snowflake implements Runnable {
 		this.g = g;
 		this.outOfViewLimit = frameHeight;
 		this.semaphore = s;
+		this.semaphoreThreadsFinished = s2;
 		this.horizontalMovementAmplifier = r.nextFloat() * 10 + 1;
 	}
 	
 	public void render() {
-			int x1 = (int) (this.horizontalMovementAmplifier * Math.sin(this.yPos / this.gravity)) + this.xPos;
+			int x1 = (int) (this.horizontalMovementAmplifier * Math.sin((this.yPos / this.gravity) / 2)) + this.xPos;
 			int x2 = x1 + this.snowflakeSize;
 			
 			int y1 = this.yPos;
@@ -93,6 +97,10 @@ public class Snowflake implements Runnable {
 			}
 			
 			this.render();
+			
+			if (this.semaphoreThreadsFinished != null) {
+				this.semaphoreThreadsFinished.release();
+			}
 		}
 		
 		System.out.println("A Snowflake reaches the end of life.");
