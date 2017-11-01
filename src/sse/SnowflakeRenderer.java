@@ -36,7 +36,7 @@ public class SnowflakeRenderer {
 	private Semaphore threadsFinished = new Semaphore(0);			// ensures synchronisation that every thread finishes painting within the same time period
 	private int addSnowflakesEachNthRound = 15;						// adds [snowflakeIncreaseRate] snowflakes after each ...th  snowflake draw call session (that should be synchronized by you :)
 	private ArrayList<Thread> threads = new ArrayList<Thread>();	// maintains list of active snowflake threads (used for semaphores)
-	private int waitBeforeRefreshDuration = 50;					// duration in ms how long we will wait before repainting the whole (updated) state again
+	private int waitBeforeRefreshDuration = 50;						// duration in ms how long we will wait before repainting the whole (updated) state again
 	private boolean lazyCanvasUpdate = false;						// speeds up the painting when enabled, but increases flickering
 	
 	public static void main(String[] args) {
@@ -67,6 +67,9 @@ public class SnowflakeRenderer {
 		this.frame.setIconImage(icon.getImage());
 	}
 	
+	/**
+	 * As it says: Let it snow! :)
+	 */
 	private void letItSnow() {
 		Graphics2D g = (Graphics2D) this.frame.getGraphics();
 		int currentBatch = 0;
@@ -74,6 +77,8 @@ public class SnowflakeRenderer {
 		
 		while (true) {
 			System.out.println("Active Threads: " + currentSnowflakes);
+			
+			// introduces new snowflakes when we finally reached the nth run of draw calls
 			if ((currentBatch % this.addSnowflakesEachNthRound) == 0) {
 				createNewSnowflakes(g);
 				currentSnowflakes = currentSnowflakes + this.snowflakeIncreaseRate;
@@ -83,6 +88,7 @@ public class SnowflakeRenderer {
 				}
 			}
 			
+			// clean-up old snowflakes that are out of view (threads in died state)
 			ArrayList<Thread> elementsToRemove = new ArrayList<Thread>();
 			for (Thread t : this.threads) {
 				if (!t.isAlive()) {
@@ -94,9 +100,13 @@ public class SnowflakeRenderer {
 		
 			currentBatch++;
 			
+			// clean canvas
 			this.frame.paintComponents(g);
+			
+			// let the snowflakes draw themselves on the new canvas
 			this.semaphore.release(currentSnowflakes);
 			
+			// optionally: wait until they finished their drawing
 			if (this.threadsFinished != null) {
 				try {
 					this.threadsFinished.acquire(currentSnowflakes);
@@ -105,6 +115,7 @@ public class SnowflakeRenderer {
 				}
 			}
 			
+			// sleep some time before we start the next cycle
 			try {
 				Thread.sleep(this.waitBeforeRefreshDuration);
 			} catch (InterruptedException e) {
@@ -113,6 +124,10 @@ public class SnowflakeRenderer {
 		}
 	}
 	
+	/**
+	 * Here we instantiate the snowflakes.
+	 * @param g is the Graphics2D object to paint on
+	 */
 	private void createNewSnowflakes(Graphics2D g) {
 		for (int i = 0; i < this.snowflakeIncreaseRate; i++) {
 			Random r = new Random();

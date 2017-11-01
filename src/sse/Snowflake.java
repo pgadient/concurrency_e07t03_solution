@@ -25,11 +25,11 @@ public class Snowflake implements Runnable {
 	private float gravity;
 	private Graphics2D g;
 	private int outOfViewLimit;
-	private Semaphore semaphore;
+	private Semaphore semaphoreThreadsCanStart;
 	private Semaphore semaphoreThreadsFinished;
 	private float horizontalMovementAmplifier;
 		
-	public Snowflake(int levelOfDetail, int snowflakeSize, int xPos, float gravity, Graphics2D g, int frameHeight, Semaphore s, Semaphore s2) {
+	public Snowflake(int levelOfDetail, int snowflakeSize, int xPos, float gravity, Graphics2D g, int frameHeight, Semaphore semaphoreThreadsCanStart, Semaphore semaphoreThreadsFinished) {
 		Random r = new Random(System.nanoTime());
 		r.nextFloat(); // better results (shouldn't be)
 		this.levelOfDetail = (int) (levelOfDetail * r.nextFloat()) + 2;
@@ -39,11 +39,14 @@ public class Snowflake implements Runnable {
 		this.gravity = gravity * (r.nextFloat() * 2) + 5;
 		this.g = g;
 		this.outOfViewLimit = frameHeight;
-		this.semaphore = s;
-		this.semaphoreThreadsFinished = s2;
-		this.horizontalMovementAmplifier = r.nextFloat() * 10 + 1;
+		this.semaphoreThreadsCanStart = semaphoreThreadsCanStart;
+		this.semaphoreThreadsFinished = semaphoreThreadsFinished;
+		this.horizontalMovementAmplifier = r.nextFloat() * 10 + 1;				// defines the horizontal oscillation
 	}
 	
+	/**
+	 * Renders the snowflake to the assigned canvas.
+	 */
 	public void render() {
 			int x1 = (int) (this.horizontalMovementAmplifier * Math.sin((this.yPos / this.gravity) / 2)) + this.xPos;
 			int x2 = x1 + this.snowflakeSize;
@@ -59,8 +62,17 @@ public class Snowflake implements Runnable {
 			koch(this.g, x2, y2, p3.getX(), p3.getY(), this.levelOfDetail);
 	}
 	
+	/**
+	 * Calculates the von Koch fractal and performs the actual drawing.
+	 * @param g Graphics2D object that should be painted
+	 * @param x1 start x coordinate of the fractal to generate
+	 * @param y1 start y coordindate of the fractal to generate
+	 * @param x2 end x coordinate of the fractal to generate
+	 * @param y2 end y coordinate of the fractal to generate
+	 * @param level represents the level of detail, i.e. fractal iterations
+	 */
 	private void koch(Graphics g, double x1, double y1, double x2, double y2, int level) {
-		
+		// von Koch algorithm
 		double a1, b1, a2, b2, a3, b3;
 		
 		if (level > 1) {
@@ -87,11 +99,14 @@ public class Snowflake implements Runnable {
 		return new Point2D.Double(x1 + length / 2, y1 + height);
 	}
 
+	/**
+	 * Main render loop of the snowflake threads
+	 */
 	@Override
 	public void run() {
 		while (!isOutOfView()) {
 			try {
-				this.semaphore.acquire();
+				this.semaphoreThreadsCanStart.acquire();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -106,6 +121,11 @@ public class Snowflake implements Runnable {
 		System.out.println("A Snowflake reaches the end of life.");
 	}
 	
+	
+	/**
+	 * Lets snowflakes die as soon as they are out of the view.
+	 * @return boolean if snowflake is still visible 
+	 */
 	private boolean isOutOfView() {
 		if (this.yPos > this.outOfViewLimit) {
 			return true;
