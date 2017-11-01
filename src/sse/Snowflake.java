@@ -92,6 +92,14 @@ public class Snowflake implements Runnable {
 		}
 	}
 	
+	/**
+	 * Calculates the 3rd point that the two other fractal lines should go to (3 fractal lines are needed to create the snowflake, has triangle like shape with no iteration (level of detail = 0).
+	 * @param x1 x coordinate of the first point of the final triangle
+	 * @param y1 y coordinate of the first point of the final triangle
+	 * @param x2 x coordinate of the second point of the final triangle
+	 * @param y2 y coordinate of the second point of the final triangle
+	 * @return Point2D.Double containing the 3rd point of the final triangle
+	 */
 	private Point2D.Double get3rdStartingPoint(double x1, double y1, double x2, double y2) {
 		double length = x2 - x1;
 		double height = (Math.sqrt(3) / 2) * length;
@@ -100,7 +108,7 @@ public class Snowflake implements Runnable {
 	}
 
 	/**
-	 * Main render loop of the snowflake threads
+	 * Main render loop of the snowflake threads.
 	 */
 	@Override
 	public void run() {
