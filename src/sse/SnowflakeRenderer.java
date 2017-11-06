@@ -34,7 +34,7 @@ public class SnowflakeRenderer {
 	private int snowflakeIncreaseRate = 2;							// how many snowflakes will be added each addSnowflakesEachNthRound
 	private Semaphore semaphore = new Semaphore(0);					// ensures synchronisation that every thread starts painting within the same time period
 	private Semaphore threadsFinished = new Semaphore(0);			// ensures synchronisation that every thread finishes painting within the same time period
-	private int addSnowflakesEachNthRound = 15;						// adds [snowflakeIncreaseRate] snowflakes after each ...th  snowflake draw call session (that should be synchronized by you :)
+	private int addSnowflakesEachNthRound = 10;						// adds [snowflakeIncreaseRate] snowflakes after each ...th  snowflake draw call session (that should be synchronized by you :)
 	private ArrayList<Thread> threads = new ArrayList<Thread>();	// maintains list of active snowflake threads (used for semaphores)
 	private int waitBeforeRefreshDuration = 50;						// duration in ms how long we will wait before repainting the whole (updated) state again
 	private boolean lazyCanvasUpdate = false;						// speeds up the painting when enabled, but increases flickering
@@ -74,6 +74,9 @@ public class SnowflakeRenderer {
 		Graphics2D g = (Graphics2D) this.frame.getGraphics();
 		int currentBatch = 0;
 		int currentSnowflakes = 0;
+		
+		// set draw color to blue
+		g.setColor(new Color(0, 0, 255));
 		
 		while (true) {
 			System.out.println("Active Threads: " + currentSnowflakes);
