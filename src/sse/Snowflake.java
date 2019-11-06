@@ -114,19 +114,23 @@ public class Snowflake implements Runnable {
 	public void run() {
 		while (!isOutOfView()) {
 			try {
+				// Wait until we are allowed to start
 				this.semaphoreThreadsCanStart.acquire();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			
 			this.render();
-			
-			if (this.semaphoreThreadsFinished != null) {
-				this.semaphoreThreadsFinished.release();
+
+			try {
+				// Wait until every snowflake finished.
+				this.semaphoreThreadsFinished.acquire();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 		
-		System.out.println("A Snowflake reaches the end of life.");
+		System.out.println("A snowflake reaches the end of life.");
 	}
 	
 	

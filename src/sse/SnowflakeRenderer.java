@@ -31,13 +31,12 @@ public class SnowflakeRenderer {
 	private float gravity = 9.81f;									// how fast the snowflakes should fall to the bottom
 	private int frameHeight = 500;									// window height
 	private int frameWidth = 500;									// window width
-	private int snowflakeIncreaseRate = 2;							// how many snowflakes will be added each addSnowflakesEachNthRound
-	private Semaphore semaphore = new Semaphore(0);					// ensures synchronisation that every thread starts painting within the same time period
+	private int snowflakeIncreaseRate = 5;							// how many snowflakes will be added each addSnowflakesEachNthRound
+	private Semaphore threadsToStart = new Semaphore(0);					// ensures synchronisation that every thread starts painting within the same time period
 	private Semaphore threadsFinished = new Semaphore(0);			// ensures synchronisation that every thread finishes painting within the same time period
-	private int addSnowflakesEachNthRound = 10;						// adds [snowflakeIncreaseRate] snowflakes after each ...th  snowflake draw call session (that should be synchronized by you :)
+	private int addSnowflakesEachNthRound = 20;						// adds [snowflakeIncreaseRate] snowflakes after each ...th  snowflake draw call session (that should be synchronized by you :)
 	private ArrayList<Thread> threads = new ArrayList<Thread>();	// maintains list of active snowflake threads (used for semaphores)
 	private int waitBeforeRefreshDuration = 50;						// duration in ms how long we will wait before repainting the whole (updated) state again
-	private boolean lazyCanvasUpdate = false;						// speeds up the painting when enabled, but increases flickering
 	
 	public static void main(String[] args) {
 		SnowflakeRenderer instance = new SnowflakeRenderer();
@@ -57,11 +56,6 @@ public class SnowflakeRenderer {
                  System.exit(0);
              }
          } );
-		
-		if (this.lazyCanvasUpdate) {
-			this.threadsFinished = null;
-		}
-		
 		URL iconURL = getClass().getResource("/sse/scg-logo.png");
 		ImageIcon icon = new ImageIcon(iconURL);
 		this.frame.setIconImage(icon.getImage());
@@ -107,15 +101,16 @@ public class SnowflakeRenderer {
 			this.frame.paintComponents(g);
 			
 			// let the snowflakes draw themselves on the new canvas
-			this.semaphore.release(currentSnowflakes);
+			this.threadsToStart.release(currentSnowflakes);
 			
-			// optionally: wait until they finished their drawing
-			if (this.threadsFinished != null) {
-				try {
-					this.threadsFinished.acquire(currentSnowflakes);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
+			// wait until they finished their drawing
+			try {
+				while (this.threadsFinished.getQueueLength() < currentSnowflakes) {
+					Thread.sleep(5);
 				}
+				this.threadsFinished.release(currentSnowflakes);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
 			}
 			
 			// sleep some time before we start the next cycle
@@ -135,7 +130,7 @@ public class SnowflakeRenderer {
 		for (int i = 0; i < this.snowflakeIncreaseRate; i++) {
 			Random r = new Random();
 			int xPosSnowflake = (int) (r.nextDouble() * this.frameWidth); 
-			Snowflake s = new Snowflake(this.levelOfDetail, this.snowflakeSize, xPosSnowflake, this.gravity, g, this.frameHeight, this.semaphore, this.threadsFinished);
+			Snowflake s = new Snowflake(this.levelOfDetail, this.snowflakeSize, xPosSnowflake, this.gravity, g, this.frameHeight, this.threadsToStart, this.threadsFinished);
 			Thread t = new Thread(s);
 			t.start();
 			this.threads.add(t);
